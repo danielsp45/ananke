@@ -1,0 +1,18 @@
+# Elixir build artefacts
+/_build/
+/deps/
+/cover/
+*.beam
+*.plt
+erl_crash.dump
+*.ez
+.fetch
+
+# Nix / direnv
+/.direnv/
+/.nix-*
+
+# Editor
+/.elixir_ls/
+/.lexical/
+.DS_Store
