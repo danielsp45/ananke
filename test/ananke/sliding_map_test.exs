@@ -337,4 +337,65 @@ defmodule Ananke.SlidingMapTest do
       end
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # entries/1
+  # ---------------------------------------------------------------------------
+
+  describe "entries/1" do
+    test "returns empty list for empty map" do
+      assert SM.entries(SM.new()) == []
+    end
+
+    test "returns all {key, index} pairs in insertion order" do
+      m = SM.new()
+      {_, m} = SM.add(m, :a)
+      {_, m} = SM.add(m, :b)
+      {_, m} = SM.add(m, :c)
+      assert SM.entries(m) == [{:a, 0}, {:b, 1}, {:c, 2}]
+    end
+
+    test "gaps from non-front removal are absent" do
+      m = SM.new()
+      {_, m} = SM.add(m, :a)
+      {_, m} = SM.add(m, :b)
+      {_, m} = SM.add(m, :c)
+      m = SM.remove(m, :b)
+      assert SM.entries(m) == [{:a, 0}, {:c, 2}]
+    end
+
+    test "reflects front removal advancing first" do
+      m = SM.new()
+      {_, m} = SM.add(m, :a)
+      {_, m} = SM.add(m, :b)
+      m = SM.remove(m, :a)
+      assert SM.entries(m) == [{:b, 1}]
+    end
+
+    test "returns empty list after all keys removed" do
+      m = SM.new()
+      {_, m} = SM.add(m, :a)
+      m = SM.remove(m, :a)
+      assert SM.entries(m) == []
+    end
+
+    property "entries keys match by_key exactly" do
+      check all keys <- uniq_list_of(integer(), min_length: 0),
+                removes <- list_of(member_of(if keys == [], do: [0], else: keys)) do
+        m = Enum.reduce(keys, SM.new(), fn k, acc -> elem(SM.add(acc, k), 1) end)
+        m = Enum.reduce(removes, m, fn k, acc -> SM.remove(acc, k) end)
+        assert SM.entries(m) |> Enum.map(&elem(&1, 0)) |> MapSet.new() ==
+                 MapSet.new(Map.keys(m.by_key))
+      end
+    end
+
+    property "entries indices are in strictly increasing order" do
+      check all keys <- uniq_list_of(integer(), min_length: 0) do
+        m = Enum.reduce(keys, SM.new(), fn k, acc -> elem(SM.add(acc, k), 1) end)
+        indices = SM.entries(m) |> Enum.map(&elem(&1, 1))
+        assert indices == Enum.sort(indices)
+        assert length(Enum.uniq(indices)) == length(indices)
+      end
+    end
+  end
 end

@@ -94,6 +94,12 @@ defmodule Ananke.SlidingMap do
   @spec next(t()) :: index()
   def next(%__MODULE__{next: n}), do: n
 
+  @doc "Returns all present `{key, index}` pairs in insertion order."
+  @spec entries(t()) :: [{key(), index()}]
+  def entries(%__MODULE__{by_index: bi, first: f, next: n}) do
+    for i <- f..(n - 1)//1, Map.has_key?(bi, i), do: {Map.get(bi, i), i}
+  end
+
   # ---------------------------------------------------------------------------
   # Private
   # ---------------------------------------------------------------------------

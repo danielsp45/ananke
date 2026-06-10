@@ -370,4 +370,56 @@ defmodule Ananke.SlidingArrayTest do
       end
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # entries/1
+  # ---------------------------------------------------------------------------
+
+  describe "entries/1" do
+    test "returns empty list for empty array" do
+      assert SA.entries(SA.new()) == []
+    end
+
+    test "returns all {index, element} pairs in index order" do
+      arr = SA.new()
+      {_, arr} = SA.add(arr, :a)
+      {_, arr} = SA.add(arr, :b)
+      {_, arr} = SA.add(arr, :c)
+      assert SA.entries(arr) == [{0, :a}, {1, :b}, {2, :c}]
+    end
+
+    test "reflects the current window after removes" do
+      arr = SA.new()
+      {_, arr} = SA.add(arr, :a)
+      {_, arr} = SA.add(arr, :b)
+      {_, arr} = SA.add(arr, :c)
+      {_, arr} = SA.remove(arr)
+      assert SA.entries(arr) == [{1, :b}, {2, :c}]
+    end
+
+    test "reflects put updates" do
+      arr = SA.new()
+      {idx, arr} = SA.add(arr, :old)
+      arr = SA.put(arr, idx, :new)
+      assert SA.entries(arr) == [{0, :new}]
+    end
+
+    property "entries indices match [first, next)" do
+      check all elems <- list_of(term()) do
+        arr = Enum.reduce(elems, SA.new(), fn e, a -> elem(SA.add(a, e), 1) end)
+        indices = arr |> SA.entries() |> Enum.map(&elem(&1, 0))
+        assert indices == Enum.to_list(SA.first(arr)..(SA.next(arr) - 1)//1)
+      end
+    end
+
+    property "entries values match at/2 for each index" do
+      check all elems <- list_of(term(), min_length: 1) do
+        arr = Enum.reduce(elems, SA.new(), fn e, a -> elem(SA.add(a, e), 1) end)
+
+        for {i, v} <- SA.entries(arr) do
+          assert SA.at(arr, i) == v
+        end
+      end
+    end
+  end
 end

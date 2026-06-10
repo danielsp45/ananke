@@ -83,4 +83,10 @@ defmodule Ananke.SlidingArray do
   @doc "Returns the number of live elements: `next - first`."
   @spec size(t()) :: non_neg_integer()
   def size(%__MODULE__{first: f, next: n}), do: n - f
+
+  @doc "Returns all live `{index, element}` pairs in index order."
+  @spec entries(t()) :: [{index(), term()}]
+  def entries(%__MODULE__{entries: e, first: f, next: n}) do
+    for i <- f..(n - 1)//1, do: {i, Map.get(e, i)}
+  end
 end
