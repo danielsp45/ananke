@@ -1,4 +1,4 @@
-defmodule Causal.Transport.UDP do
+defmodule Ananke.Transport.UDP do
   @moduledoc """
   UDP transport for inter-node communication.
 
@@ -10,9 +10,9 @@ defmodule Causal.Transport.UDP do
   # TODO(v2): handle MTU limits and fragmentation for large wire messages
   """
 
-  @behaviour Causal.Transport
+  @behaviour Ananke.Transport
 
-  @impl Causal.Transport
+  @impl Ananke.Transport
   def send_wire(_from_id, _to_id, _wire_msg) do
     # TODO(v2): implement UDP delivery
     :ok

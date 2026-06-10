@@ -1,4 +1,4 @@
-defmodule Causal.EndpointTest do
+defmodule Ananke.EndpointTest do
   use ExUnit.Case, async: false
 
   # ---------------------------------------------------------------------------
@@ -7,14 +7,14 @@ defmodule Causal.EndpointTest do
 
   defmodule CollectingEndpoint do
     @moduledoc false
-    use Causal.Endpoint
+    use Ananke.Endpoint
 
-    @impl Causal.Endpoint
+    @impl Ananke.Endpoint
     def handle_init(opts) do
       %{owner: Keyword.fetch!(opts, :test_owner)}
     end
 
-    @impl Causal.Endpoint
+    @impl Ananke.Endpoint
     def handle_deliver(from, payload, state) do
       Kernel.send(state.owner, {:got, from, payload})
       {:noreply, state}
@@ -35,10 +35,10 @@ defmodule Causal.EndpointTest do
     test "message sent from A arrives at B" do
       a = uid()
       b = uid()
-      {:ok, _} = Causal.start_link(id: a)
-      {:ok, _} = Causal.start_link(id: b, owner: self())
+      {:ok, _} = Ananke.start_link(id: a)
+      {:ok, _} = Ananke.start_link(id: b, owner: self())
 
-      Causal.send(a, b, "hello")
+      Ananke.send(a, b, "hello")
 
       assert_receive {:causal, ^a, "hello"}, 500
     end
@@ -46,12 +46,12 @@ defmodule Causal.EndpointTest do
     test "multiple messages arrive in send order" do
       a = uid()
       b = uid()
-      {:ok, _} = Causal.start_link(id: a)
-      {:ok, _} = Causal.start_link(id: b, owner: self())
+      {:ok, _} = Ananke.start_link(id: a)
+      {:ok, _} = Ananke.start_link(id: b, owner: self())
 
-      Causal.send(a, b, 1)
-      Causal.send(a, b, 2)
-      Causal.send(a, b, 3)
+      Ananke.send(a, b, 1)
+      Ananke.send(a, b, 2)
+      Ananke.send(a, b, 3)
 
       assert_receive {:causal, ^a, 1}, 500
       assert_receive {:causal, ^a, 2}, 500
@@ -60,26 +60,26 @@ defmodule Causal.EndpointTest do
 
     test "send to an unregistered id is silently dropped" do
       a = uid()
-      {:ok, _} = Causal.start_link(id: a)
-      Causal.send(a, :nonexistent_target, "lost")
+      {:ok, _} = Ananke.start_link(id: a)
+      Ananke.send(a, :nonexistent_target, "lost")
       refute_receive {:causal, _, _}, 100
     end
 
     test "send from an unregistered id is a no-op" do
       b = uid()
-      {:ok, _} = Causal.start_link(id: b, owner: self())
-      Causal.send(:ghost_sender, b, "lost")
+      {:ok, _} = Ananke.start_link(id: b, owner: self())
+      Ananke.send(:ghost_sender, b, "lost")
       refute_receive {:causal, _, _}, 100
     end
 
     test "two endpoints communicate bidirectionally" do
       a = uid()
       b = uid()
-      {:ok, _} = Causal.start_link(id: a, owner: self())
-      {:ok, _} = Causal.start_link(id: b, owner: self())
+      {:ok, _} = Ananke.start_link(id: a, owner: self())
+      {:ok, _} = Ananke.start_link(id: b, owner: self())
 
-      Causal.send(a, b, :ping)
-      Causal.send(b, a, :pong)
+      Ananke.send(a, b, :ping)
+      Ananke.send(b, a, :pong)
 
       assert_receive {:causal, ^a, :ping}, 500
       assert_receive {:causal, ^b, :pong}, 500
@@ -87,17 +87,17 @@ defmodule Causal.EndpointTest do
   end
 
   # ---------------------------------------------------------------------------
-  # use Causal.Endpoint form
+  # use Ananke.Endpoint form
   # ---------------------------------------------------------------------------
 
-  describe "use Causal.Endpoint form" do
+  describe "use Ananke.Endpoint form" do
     test "handle_deliver is called with correct from and payload" do
       a = uid()
       b = uid()
       {:ok, _} = CollectingEndpoint.start_link(id: a, test_owner: self())
       {:ok, _} = CollectingEndpoint.start_link(id: b, test_owner: self())
 
-      Causal.send(a, b, "via endpoint")
+      Ananke.send(a, b, "via endpoint")
 
       assert_receive {:got, ^a, "via endpoint"}, 500
     end
@@ -108,9 +108,9 @@ defmodule Causal.EndpointTest do
       {:ok, _} = CollectingEndpoint.start_link(id: a, test_owner: self())
       {:ok, _} = CollectingEndpoint.start_link(id: b, test_owner: self())
 
-      Causal.send(a, b, :one)
-      Causal.send(a, b, :two)
-      Causal.send(a, b, :three)
+      Ananke.send(a, b, :one)
+      Ananke.send(a, b, :two)
+      Ananke.send(a, b, :three)
 
       assert_receive {:got, ^a, :one}, 500
       assert_receive {:got, ^a, :two}, 500
@@ -123,7 +123,7 @@ defmodule Causal.EndpointTest do
       {:ok, _} = CollectingEndpoint.start_link(id: a, test_owner: self())
       {:ok, _} = CollectingEndpoint.start_link(id: b, test_owner: self())
 
-      Causal.send(a, b, :check)
+      Ananke.send(a, b, :check)
 
       assert_receive {:got, ^a, :check}, 500
     end
@@ -132,9 +132,9 @@ defmodule Causal.EndpointTest do
       # Module with no handle_init override — default %{} is used.
       # We verify it starts without error and delivers.
       defmodule MinimalEndpoint do
-        use Causal.Endpoint
+        use Ananke.Endpoint
 
-        @impl Causal.Endpoint
+        @impl Ananke.Endpoint
         def handle_deliver(_from, payload, state) do
           test_pid = Map.get(state, :__test_pid__)
 
@@ -150,7 +150,7 @@ defmodule Causal.EndpointTest do
       b = uid()
       {:ok, _} = MinimalEndpoint.start_link(id: a)
       {:ok, _} = MinimalEndpoint.start_link(id: b)
-      Causal.send(a, b, :ok_payload)
+      Ananke.send(a, b, :ok_payload)
       # No crash is the assertion here; delivery goes nowhere because
       # state has no :__test_pid__ (the default is %{}).
       Process.sleep(100)
@@ -158,22 +158,22 @@ defmodule Causal.EndpointTest do
   end
 
   # ---------------------------------------------------------------------------
-  # Causal.Endpoint.Server child_spec
+  # Ananke.Endpoint.Server child_spec
   # ---------------------------------------------------------------------------
 
   describe "child_spec" do
-    test "Causal endpoints can be started under a supervisor" do
+    test "Ananke endpoints can be started under a supervisor" do
       a = uid()
       b = uid()
 
       children = [
-        Supervisor.child_spec({Causal, id: a}, id: a),
-        Supervisor.child_spec({Causal, id: b, owner: self()}, id: b)
+        Supervisor.child_spec({Ananke, id: a}, id: a),
+        Supervisor.child_spec({Ananke, id: b, owner: self()}, id: b)
       ]
 
       {:ok, sup} = Supervisor.start_link(children, strategy: :one_for_one)
 
-      Causal.send(a, b, :from_supervisor)
+      Ananke.send(a, b, :from_supervisor)
       assert_receive {:causal, ^a, :from_supervisor}, 500
 
       Supervisor.stop(sup)

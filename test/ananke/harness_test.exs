@@ -1,7 +1,7 @@
-defmodule Causal.HarnessTest do
+defmodule Ananke.HarnessTest do
   use ExUnit.Case, async: true
 
-  alias Causal.Harness
+  alias Ananke.Harness
 
   describe "Passthrough via harness" do
     test "single message is delivered" do

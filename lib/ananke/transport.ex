@@ -1,11 +1,11 @@
-defmodule Causal.Transport do
+defmodule Ananke.Transport do
   @moduledoc """
   Behaviour for moving a wire message from one participant to another.
 
   The transport is the **only** layer that knows how to resolve a logical
   participant id to a network address or local pid. The shell and the protocol
   core are entirely unaware of this resolution — that is what makes
-  `Causal.send/3` work identically whether the peer is local or remote.
+  `Ananke.send/3` work identically whether the peer is local or remote.
 
   Implementations must NOT impose ordering guarantees beyond fair-loss eventual
   delivery ("if messages keep being sent, eventually some gets through"). The

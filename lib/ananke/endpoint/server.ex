@@ -1,7 +1,7 @@
-defmodule Causal.Endpoint.Server do
+defmodule Ananke.Endpoint.Server do
   @moduledoc false
   # Internal GenServer backing the sidecar (low-level) form of a causal
-  # endpoint. Started via `Causal.start_link/1`; not part of the public API.
+  # endpoint. Started via `Ananke.start_link/1`; not part of the public API.
   #
   # State shape:
   #   %{id, core_mod, core_state, owner, transport, tick_ms}
@@ -28,13 +28,13 @@ defmodule Causal.Endpoint.Server do
   @impl GenServer
   def init(opts) do
     id = Keyword.fetch!(opts, :id)
-    transport = Keyword.get(opts, :transport, Causal.Transport.Local)
-    protocol = Keyword.get(opts, :protocol, Causal.Protocol.Passthrough)
+    transport = Keyword.get(opts, :transport, Ananke.Transport.Local)
+    protocol = Keyword.get(opts, :protocol, Ananke.Passthrough)
     tick_ms = Keyword.get(opts, :tick_ms, 200)
     owner = Keyword.fetch!(opts, :owner)
 
     core_state = protocol.init(id, opts)
-    {:ok, _} = Registry.register(Causal.Registry, id, nil)
+    {:ok, _} = Registry.register(Ananke.Registry, id, nil)
     schedule_tick(tick_ms)
 
     {:ok,

@@ -4,10 +4,7 @@ defmodule Ananke.Application do
 
   @impl Application
   def start(_type, _args) do
-    children = [
-      {Registry, keys: :unique, name: Causal.Registry}
-    ]
-
+    children = [{Registry, keys: :unique, name: Ananke.Registry}]
     Supervisor.start_link(children, strategy: :one_for_one, name: Ananke.Supervisor)
   end
 end

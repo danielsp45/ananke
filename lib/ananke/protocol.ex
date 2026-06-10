@@ -1,4 +1,4 @@
-defmodule Causal.Protocol do
+defmodule Ananke.Protocol do
   @moduledoc """
   Behaviour contract for the causal-delivery protocol core.
 
@@ -7,7 +7,7 @@ defmodule Causal.Protocol do
   the network. All side effects are delegated to the endpoint shell.
 
   This separation means the core can be driven entirely from a deterministic
-  in-memory harness (see `Causal.Harness`) — no processes, no timing — which is
+  in-memory harness (see `Ananke.Harness`) — no processes, no timing — which is
   where property tests for the happens-before invariant live.
   """
 

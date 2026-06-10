@@ -1,4 +1,4 @@
-defmodule Causal.Harness do
+defmodule Ananke.Harness do
   @moduledoc """
   Deterministic, in-memory test harness for the causal protocol core.
 
@@ -23,10 +23,10 @@ defmodule Causal.Harness do
 
   ## Usage
 
-      h = Causal.Harness.new([:a, :b, :c])
-      h = Causal.Harness.causal_send(h, :a, :b, "msg")
-      h = Causal.Harness.drain(h)
-      assert Causal.Harness.delivered(h, :b) == [{:a, "msg"}]
+      h = Ananke.Harness.new([:a, :b, :c])
+      h = Ananke.Harness.causal_send(h, :a, :b, "msg")
+      h = Ananke.Harness.drain(h)
+      assert Ananke.Harness.delivered(h, :b) == [{:a, "msg"}]
 
   ## Happens-before property scaffold
 
@@ -54,10 +54,10 @@ defmodule Causal.Harness do
 
   @doc """
   Create a harness with the given participant ids using `protocol` as the core.
-  Defaults to `Causal.Protocol.Passthrough`.
+  Defaults to `Ananke.Passthrough`.
   """
   @spec new([id()], module()) :: t()
-  def new(ids, protocol \\ Causal.Protocol.Passthrough) do
+  def new(ids, protocol \\ Ananke.Passthrough) do
     %__MODULE__{
       nodes: Map.new(ids, fn id -> {id, protocol.init(id, [])} end),
       queue: [],
@@ -85,7 +85,7 @@ defmodule Causal.Harness do
   recipient's core. Raises if the queue is empty.
   """
   @spec deliver_one(t()) :: t()
-  def deliver_one(%__MODULE__{queue: []}), do: raise("Causal.Harness queue is empty")
+  def deliver_one(%__MODULE__{queue: []}), do: raise("Ananke.Harness queue is empty")
 
   def deliver_one(%__MODULE__{queue: [{from, to, wire} | rest]} = h) do
     core = Map.fetch!(h.nodes, to)

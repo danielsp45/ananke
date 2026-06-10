@@ -1,20 +1,20 @@
-defmodule Causal.Endpoint do
+defmodule Ananke.Endpoint do
   @moduledoc """
   Behaviour and `use` macro for the native-feeling causal endpoint.
 
   ## Usage
 
       defmodule MyApp.Worker do
-        use Causal.Endpoint
+        use Ananke.Endpoint
 
         # Optional: provide initial user-level state.
-        @impl Causal.Endpoint
+        @impl Ananke.Endpoint
         def handle_init(opts) do
           %{name: Keyword.fetch!(opts, :name)}
         end
 
         # Required: handle a causally-ordered delivery.
-        @impl Causal.Endpoint
+        @impl Ananke.Endpoint
         def handle_deliver(from, payload, state) do
           IO.inspect({from, payload}, label: state.name)
           {:noreply, state}
@@ -28,7 +28,7 @@ defmodule Causal.Endpoint do
       {:ok, _} = MyApp.Worker.start_link(id: :worker_a, name: "Alice")
 
       # Send from anywhere:
-      Causal.send(:worker_a, :worker_b, "hello")
+      Ananke.send(:worker_a, :worker_b, "hello")
 
   ## GenServer options
 
@@ -38,8 +38,8 @@ defmodule Causal.Endpoint do
   ## Causal options
 
   - `:id` (required) — stable logical identifier for this participant.
-  - `:transport` — transport module. Defaults to `Causal.Transport.Local`.
-  - `:protocol` — protocol core module. Defaults to `Causal.Protocol.Passthrough`.
+  - `:transport` — transport module. Defaults to `Ananke.Transport.Local`.
+  - `:protocol` — protocol core module. Defaults to `Ananke.Passthrough`.
   - `:tick_ms` — periodic tick interval in ms. Defaults to `200`.
 
   ## Adding your own GenServer callbacks
@@ -81,7 +81,7 @@ defmodule Causal.Endpoint do
   defmacro __using__(_opts) do
     quote location: :keep do
       use GenServer
-      @behaviour Causal.Endpoint
+      @behaviour Ananke.Endpoint
 
       @gs_opts [:name, :timeout, :debug, :spawn_opt, :hibernate_after]
 
@@ -93,13 +93,13 @@ defmodule Causal.Endpoint do
       @impl GenServer
       def init(opts) do
         id = Keyword.fetch!(opts, :id)
-        transport = Keyword.get(opts, :transport, Causal.Transport.Local)
-        protocol = Keyword.get(opts, :protocol, Causal.Protocol.Passthrough)
+        transport = Keyword.get(opts, :transport, Ananke.Transport.Local)
+        protocol = Keyword.get(opts, :protocol, Ananke.Passthrough)
         tick_ms = Keyword.get(opts, :tick_ms, 200)
 
         core_state = protocol.init(id, opts)
-        {:ok, _} = Registry.register(Causal.Registry, id, nil)
-        Causal.Endpoint.schedule_tick(tick_ms)
+        {:ok, _} = Registry.register(Ananke.Registry, id, nil)
+        Ananke.Endpoint.schedule_tick(tick_ms)
 
         cs = %{
           id: id,
@@ -121,7 +121,7 @@ defmodule Causal.Endpoint do
       def handle_cast({:causal_send, dest, payload}, {cs, us}) do
         {new_core, effects} = cs.core_mod.handle_causal_send(cs.core_state, dest, payload)
         new_cs = %{cs | core_state: new_core}
-        new_us = Causal.Endpoint.exec_effects(effects, new_cs, us, __MODULE__)
+        new_us = Ananke.Endpoint.exec_effects(effects, new_cs, us, __MODULE__)
         {:noreply, {new_cs, new_us}}
       end
 
@@ -129,7 +129,7 @@ defmodule Causal.Endpoint do
       def handle_info({:net, from, wire_msg}, {cs, us}) do
         {new_core, effects} = cs.core_mod.handle_net(cs.core_state, from, wire_msg)
         new_cs = %{cs | core_state: new_core}
-        new_us = Causal.Endpoint.exec_effects(effects, new_cs, us, __MODULE__)
+        new_us = Ananke.Endpoint.exec_effects(effects, new_cs, us, __MODULE__)
         {:noreply, {new_cs, new_us}}
       end
 
@@ -137,8 +137,8 @@ defmodule Causal.Endpoint do
       def handle_info(:tick, {cs, us}) do
         {new_core, effects} = cs.core_mod.handle_tick(cs.core_state)
         new_cs = %{cs | core_state: new_core}
-        new_us = Causal.Endpoint.exec_effects(effects, new_cs, us, __MODULE__)
-        Causal.Endpoint.schedule_tick(cs.tick_ms)
+        new_us = Ananke.Endpoint.exec_effects(effects, new_cs, us, __MODULE__)
+        Ananke.Endpoint.schedule_tick(cs.tick_ms)
         {:noreply, {new_cs, new_us}}
       end
     end
