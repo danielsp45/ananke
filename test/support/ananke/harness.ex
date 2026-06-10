@@ -111,6 +111,53 @@ defmodule Ananke.Harness do
   @spec pending_count(t()) :: non_neg_integer()
   def pending_count(%__MODULE__{queue: q}), do: length(q)
 
+  @doc "Drive `handle_tick` for node `id`, enqueuing any resulting transmits."
+  @spec tick(t(), id()) :: t()
+  def tick(%__MODULE__{} = h, id) do
+    core = Map.fetch!(h.nodes, id)
+    {new_core, effects} = h.protocol.handle_tick(core)
+
+    %{h | nodes: Map.put(h.nodes, id, new_core)}
+    |> enqueue_transmits(id, effects)
+  end
+
+  @doc "Drop all queued messages for which `pred` returns true."
+  @spec drop(t(), ({id(), id(), wire()} -> boolean())) :: t()
+  def drop(%__MODULE__{} = h, pred) do
+    %{h | queue: Enum.reject(h.queue, pred)}
+  end
+
+  @doc "Re-enqueue the message at zero-based index `i`, appending a copy to the queue tail."
+  @spec duplicate(t(), non_neg_integer()) :: t()
+  def duplicate(%__MODULE__{} = h, i) do
+    case Enum.at(h.queue, i) do
+      nil -> h
+      msg -> %{h | queue: h.queue ++ [msg]}
+    end
+  end
+
+  @doc "Replace the queue with `fun.(queue)`, allowing arbitrary reordering."
+  @spec reorder(t(), ([pending()] -> [pending()])) :: t()
+  def reorder(%__MODULE__{} = h, fun) do
+    %{h | queue: fun.(h.queue)}
+  end
+
+  @doc """
+  Deliver all queued messages and tick all nodes repeatedly until the system
+  reaches quiescence: a full drain+tick pass produces an empty queue.
+  """
+  @spec quiesce(t()) :: t()
+  def quiesce(%__MODULE__{} = h) do
+    h = drain(h)
+    h_ticked = Enum.reduce(Map.keys(h.nodes), h, fn id, acc -> tick(acc, id) end)
+
+    if h_ticked.queue == [] do
+      h_ticked
+    else
+      quiesce(h_ticked)
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Private
   # ---------------------------------------------------------------------------
