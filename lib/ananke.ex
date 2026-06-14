@@ -102,6 +102,26 @@ defmodule Ananke do
 
   If `from_id` is not registered (endpoint not started), the call is a no-op.
   """
+  @doc """
+  Register a remote participant and connect to its node.
+
+  Tells Ananke that `id` lives on `node_name` and establishes a Partisan
+  connection to that node. After this call, `Ananke.send/3` can route
+  messages to `id` transparently.
+
+  Options:
+
+  - `:ip` (required) — IP address tuple of the remote node, e.g. `{127, 0, 0, 1}`.
+  - `:port` (required) — Partisan listen port of the remote node.
+
+  Returns `:ok` on success or `{:error, reason}` if the Partisan join fails.
+  No-op if `node_name` is the current node.
+  """
+  @spec connect(id :: term(), node_name :: node(), keyword()) :: :ok | {:error, term()}
+  def connect(id, node_name, opts) do
+    Ananke.Transport.Partisan.AddressBook.connect(id, node_name, opts)
+  end
+
   @spec send(from_id :: term(), to_id_or_ids :: term() | [term()], payload :: term()) :: :ok
   def send(from_id, to_id_or_ids, payload) do
     case Registry.lookup(Ananke.Registry, from_id) do

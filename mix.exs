@@ -8,7 +8,8 @@ defmodule Ananke.MixProject do
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
-      deps: deps()
+      deps: deps(),
+      releases: []
     ]
   end
 
@@ -25,7 +26,8 @@ defmodule Ananke.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:stream_data, "~> 1.0", only: [:dev, :test]}
+      {:stream_data, "~> 1.0", only: [:dev, :test]},
+      {:partisan, "~> 5.0"}
     ]
   end
 end

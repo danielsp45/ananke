@@ -35,6 +35,11 @@ defmodule Ananke.Endpoint.Server do
 
     core_state = protocol.init(id, opts)
     {:ok, _} = Registry.register(Ananke.Registry, id, nil)
+
+    if transport == Ananke.Transport.Partisan do
+      Ananke.Transport.Partisan.AddressBook.register(id)
+    end
+
     schedule_tick(tick_ms)
 
     {:ok,
